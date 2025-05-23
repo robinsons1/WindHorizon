@@ -4,3 +4,4 @@ uvicorn[standard]
 firebase-admin
 jinja2
 uvicorn[standard]
+firebase-admin
