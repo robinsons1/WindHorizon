@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard básico</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h1>Dashboard básico con FastAPI</h1>
+  <canvas id="sensorChart" width="600" height="400"></canvas>
+
+  <script>
+    async function fetchDatos() {
+      const response = await fetch('/api/sensores');
+      const data = await response.json();
+      return data;
+    }
+
+    function prepararDatos(data) {
+      const labels = [];
+      const valores = [];
+      for (const [key, val] of Object.entries(data)) {
+        labels.push(key);
+        valores.push(val);
+      }
+      return { labels, valores };
+    }
+
+    async function crearGrafico() {
+      const datos = await fetchDatos();
+      const { labels, valores } = prepararDatos(datos);
+
+      const ctx = document.getElementById('sensorChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Valor Sensor',
+            data: valores,
+            borderColor: 'blue',
+            fill: false,
+            tension: 0.1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: { title: { display: true, text: 'Timestamp' } },
+            y: { title: { display: true, text: 'Valor' } }
+          }
+        }
+      });
+    }
+
+    crearGrafico();
+  </script>
+</body>
+</html>
