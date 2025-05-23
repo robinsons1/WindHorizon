@@ -1,57 +1,162 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <title>Dashboard básico</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard Mejorado</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 0 15px;
+      background-color: #f7f9fc;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+      color: #2c3e50;
+    }
+    #stats {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 15px;
+      font-weight: bold;
+      color: #34495e;
+    }
+    #stats div {
+      background: #e1e8f0;
+      padding: 10px 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgb(0 0 0 / 0.1);
+    }
+    #refreshBtn {
+      display: block;
+      margin: 0 auto 20px auto;
+      padding: 8px 20px;
+      font-size: 16px;
+      border: none;
+      background-color: #3498db;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    #refreshBtn:hover {
+      background-color: #2980b9;
+    }
+    canvas {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgb(0 0 0 / 0.1);
+    }
+  </style>
 </head>
 <body>
-  <h1>Dashboard básico con FastAPI</h1>
-  <canvas id="sensorChart" width="600" height="400"></canvas>
+  <h1>Dashboard Mejorado con FastAPI</h1>
+
+  <div id="stats">
+    <div>Máximo: <span id="maxVal">-</span></div>
+    <div>Mínimo: <span id="minVal">-</span></div>
+    <div>Promedio: <span id="avgVal">-</span></div>
+  </div>
+
+  <button id="refreshBtn">Actualizar Datos</button>
+
+  <canvas id="sensorChart" width="800" height="400"></canvas>
 
   <script>
+    let sensorChart;
+
     async function fetchDatos() {
-      const response = await fetch('/api/sensores');
-      const data = await response.json();
-      return data;
+      try {
+        const response = await fetch('/api/sensores');
+        if (!response.ok) throw new Error("Error al obtener datos");
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        alert("No se pudo cargar los datos: " + error.message);
+        return {};
+      }
     }
 
     function prepararDatos(data) {
       const labels = [];
       const valores = [];
       for (const [key, val] of Object.entries(data)) {
-        labels.push(key);
+        // Asumimos que key es timestamp en ms, si no, adapta aquí
+        const fecha = new Date(parseInt(key));
+        labels.push(fecha.toLocaleString());
         valores.push(val);
       }
       return { labels, valores };
+    }
+
+    function calcularEstadisticas(valores) {
+      if (valores.length === 0) return { max: '-', min: '-', avg: '-' };
+      const max = Math.max(...valores);
+      const min = Math.min(...valores);
+      const avg = (valores.reduce((a,b) => a + b, 0) / valores.length).toFixed(2);
+      return { max, min, avg };
     }
 
     async function crearGrafico() {
       const datos = await fetchDatos();
       const { labels, valores } = prepararDatos(datos);
 
+      const stats = calcularEstadisticas(valores);
+      document.getElementById('maxVal').textContent = stats.max;
+      document.getElementById('minVal').textContent = stats.min;
+      document.getElementById('avgVal').textContent = stats.avg;
+
       const ctx = document.getElementById('sensorChart').getContext('2d');
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Valor Sensor',
-            data: valores,
-            borderColor: 'blue',
-            fill: false,
-            tension: 0.1
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            x: { title: { display: true, text: 'Timestamp' } },
-            y: { title: { display: true, text: 'Valor' } }
+
+      if (sensorChart) {
+        // Actualiza datos si gráfico ya existe
+        sensorChart.data.labels = labels;
+        sensorChart.data.datasets[0].data = valores;
+        sensorChart.update();
+      } else {
+        sensorChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Valor Sensor',
+              data: valores,
+              borderColor: '#2980b9',
+              backgroundColor: 'rgba(41, 128, 185, 0.2)',
+              fill: true,
+              tension: 0.3,
+              pointRadius: 3,
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { labels: { font: { size: 14 } } }
+            },
+            scales: {
+              x: {
+                title: { display: true, text: 'Fecha y Hora' },
+                ticks: { maxRotation: 45, minRotation: 30 }
+              },
+              y: {
+                title: { display: true, text: 'Valor' },
+                beginAtZero: true
+              }
+            }
           }
-        }
-      });
+        });
+      }
     }
 
+    document.getElementById('refreshBtn').addEventListener('click', crearGrafico);
+
+    // Carga inicial del gráfico
     crearGrafico();
   </script>
 </body>
