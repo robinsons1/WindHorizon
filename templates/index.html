@@ -125,21 +125,30 @@
     }
 
     function crearODActualizarGraficos() {
+      const chartsDiv = document.getElementById("charts");
+
       sensores.forEach(({ key, label, min, max }) => {
         const data = generarDatosAleatorios(min, max);
 
-        if (!charts[key]) {
+        // Verificar si el canvas ya existe
+        let canvas = document.getElementById(key);
+        if (!canvas) {
+          // Crear contenedor y canvas sólo si NO existe
           const contenedor = crearContenedorGrafico(key + "_container", label);
-          const chartsDiv = document.getElementById("charts");
           chartsDiv.appendChild(contenedor);
+          canvas = document.getElementById(key);
+
+          // Crear gráfico nuevo
           charts[key] = crearGrafico(key, label, data);
         } else {
+          // Actualizar gráfico existente
           charts[key].data.labels = data.labels;
           charts[key].data.datasets[0].data = data.valores;
           charts[key].update();
         }
       });
     }
+
 
     document.getElementById('refreshBtn').addEventListener('click', crearODActualizarGraficos);
 
