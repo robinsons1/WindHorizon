@@ -181,6 +181,35 @@
       });
     }
 
+    function subirDatosAleatorios() {
+      const sensorRanges = {
+        voltaje_dc: [10, 14],
+        corriente_bateria: [0, 30],
+        corriente_inversor: [0, 50],
+        rpm_turbina: [0, 3000],
+        vibracion: [0, 10],
+        humedad: [20, 80],
+        temperatura: [0, 40]
+      };
+
+      const datos = {};
+      for (const [key, [min, max]] of Object.entries(sensorRanges)) {
+        datos[key] = +(Math.random() * (max - min) + min).toFixed(2);
+      }
+
+      datos.timestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+      db.collection("sensores").add(datos)
+        .then(() => console.log("✅ Datos subidos"))
+        .catch(e => console.error("❌ Error al subir datos:", e));
+    }
+
+    // Subir al cargar
+    subirDatosAleatorios();
+
+    // Subir cada 2 minutos
+    setInterval(subirDatosAleatorios, 120000);
+
     crearContenedores();
     graficarDatos();
     setInterval(graficarDatos, 60000); // actualiza cada minuto
