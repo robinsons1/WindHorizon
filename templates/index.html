@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>WindHorizon - Dashboard de monitoreo</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -20,46 +22,33 @@
       font-size: 3rem;
       margin-bottom: 5px;
       color: #1a237e;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     p.subtitle {
       text-align: center;
       font-size: 1.2rem;
       color: #555;
-      margin-top: 0;
       margin-bottom: 40px;
       font-style: italic;
       max-width: 700px;
-      margin-left: auto;
-      margin-right: auto;
+      margin: auto;
     }
     .chart-container {
       background: white;
       border-radius: 15px;
       box-shadow: 0 5px 20px rgba(0,0,0,0.07);
-      padding: 30px 30px 20px 30px;
+      padding: 30px;
       margin-bottom: 50px;
-      transition: transform 0.3s ease;
-    }
-    .chart-container:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
     }
     .chart-title {
       font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 10px;
       color: #3949ab;
-      letter-spacing: 0.03em;
+      margin-bottom: 10px;
     }
     .chart-desc {
       font-size: 1rem;
       color: #666;
-      margin-top: 0;
       margin-bottom: 20px;
-      line-height: 1.4;
       font-style: italic;
-      max-width: 700px;
     }
     canvas {
       max-width: 100%;
@@ -70,158 +59,9 @@
 </head>
 <body>
   <h1>WindHorizon</h1>
-  <p class="subtitle">
-    Dashboard de Monitoreo — Visualiza en tiempo real los parámetros críticos para la eficiencia y seguridad del sistema.
-  </p>
+  <p class="subtitle">Dashboard de Monitoreo — Datos en tiempo real desde Firestore</p>
 
   <div id="charts"></div>
-
-  <script>
-    const sensores = [
-      {
-        key: "voltaje_dc",
-        label: "Voltaje DC",
-        min: 10, max: 14,
-        desc: "Voltaje DC junto con la corriente permite calcular la potencia entregada a la batería; medido a la salida del MPPT antes de la entrada a la batería."
-      },
-      {
-        key: "corriente_bateria",
-        label: "Corriente de Carga de Batería",
-        min: 0, max: 30,
-        desc: "Determina, junto al voltaje, la potencia y verifica las corrientes de carga para mantener la batería en buen estado."
-      },
-      {
-        key: "corriente_inversor",
-        label: "Corriente del Inversor",
-        min: 0, max: 50,
-        desc: "Permite identificar la potencia de salida con un voltaje AC constante de 120VAC."
-      },
-      {
-        key: "rpm_turbina",
-        label: "RPM de la Turbina",
-        min: 0, max: 3000,
-        desc: "Indica la velocidad de rotación y ayuda a calcular límites seguros mediante el freno."
-      },
-      {
-        key: "vibracion",
-        label: "Vibración Estructural",
-        min: 0, max: 10,
-        desc: "Sensor de seguridad que detecta vibraciones elevadas para detener la turbina y evitar daños."
-      },
-      {
-        key: "humedad",
-        label: "Humedad Ambiental",
-        min: 20, max: 80,
-        desc: "Monitorea las condiciones de humedad en la zona para prever efectos en componentes eléctricos y mecánicos."
-      },
-      {
-        key: "temperatura",
-        label: "Temperatura Ambiental",
-        min: 0, max: 40,
-        desc: "Mide las condiciones climáticas que pueden afectar la operación y eficiencia de la turbina."
-      }
-    ];
-
-    const charts = {};
-
-    function crearContenedoresIniciales() {
-      const chartsDiv = document.getElementById("charts");
-      sensores.forEach(({ key, label, desc }) => {
-        const contenedor = document.createElement("div");
-        contenedor.className = "chart-container";
-
-        const h3 = document.createElement("h3");
-        h3.className = "chart-title";
-        h3.textContent = label;
-        contenedor.appendChild(h3);
-
-        const p = document.createElement("p");
-        p.className = "chart-desc";
-        p.textContent = desc;
-        contenedor.appendChild(p);
-
-        const canvas = document.createElement("canvas");
-        canvas.id = key;
-        contenedor.appendChild(canvas);
-
-        chartsDiv.appendChild(contenedor);
-      });
-    }
-
-    function generarDatosAleatorios(min, max, cantidad = 20) {
-      const valores = [];
-      const labels = [];
-      const ahora = Date.now();
-      for (let i = cantidad - 1; i >= 0; i--) {
-        labels.push(new Date(ahora - i * 60000).toLocaleTimeString());
-        valores.push((Math.random() * (max - min) + min).toFixed(2));
-      }
-      return { labels, valores };
-    }
-
-    function crearGraficosIniciales() {
-      sensores.forEach(({ key, label, min, max }) => {
-        const data = generarDatosAleatorios(min, max);
-        const ctx = document.getElementById(key).getContext("2d");
-
-        charts[key] = new Chart(ctx, {
-          type: "line",
-          data: {
-            labels: data.labels,
-            datasets: [{
-              label: label,
-              data: data.valores,
-              borderColor: "#3949ab",
-              backgroundColor: "rgba(57, 73, 171, 0.3)",
-              fill: true,
-              tension: 0.3,
-              pointRadius: 3
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: { labels: { font: { size: 14 } } }
-            },
-            scales: {
-              x: {
-                title: { display: true, text: "Hora" },
-                ticks: { maxRotation: 45, minRotation: 30 }
-              },
-              y: {
-                title: { display: true, text: label },
-                beginAtZero: true
-              }
-            }
-          }
-        });
-      });
-    }
-
-    function actualizarDatos() {
-      sensores.forEach(({ key, min, max }) => {
-        const data = generarDatosAleatorios(min, max);
-        const chart = charts[key];
-        if (chart) {
-          chart.data.labels = data.labels;
-          chart.data.datasets[0].data = data.valores;
-          chart.update();
-        }
-      });
-    }
-
-    // Inicializa todo al cargar
-    crearContenedoresIniciales();
-    crearGraficosIniciales();
-
-    // Actualiza datos automáticamente cada 10 segundos
-    setInterval(actualizarDatos, 10000);
-  </script>
-
-  
-  <!-- Aquí abajo, justo antes de </body>, pega este código -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
     const firebaseConfig = {
@@ -234,38 +74,116 @@
       measurementId: "G-HX4S1HDEHP"
     };
 
-    // Inicializa Firebase
     firebase.initializeApp(firebaseConfig);
-
     const db = firebase.firestore();
 
-    function subirDatosAleatorios() {
-      const sensores = {
-        voltaje_dc: [10, 14],
-        corriente_bateria: [0, 30],
-        corriente_inversor: [0, 50],
-        rpm_turbina: [0, 3000],
-        vibracion: [0, 10],
-        humedad: [20, 80],
-        temperatura: [0, 40]
-      };
+    const sensores = [
+      { key: "voltaje_dc", label: "Voltaje DC", desc: "Voltaje de entrada a la batería desde el MPPT." },
+      { key: "corriente_bateria", label: "Corriente Batería", desc: "Corriente que carga la batería." },
+      { key: "corriente_inversor", label: "Corriente Inversor", desc: "Corriente que entrega el inversor a 120VAC." },
+      { key: "rpm_turbina", label: "RPM Turbina", desc: "Velocidad de rotación de la turbina." },
+      { key: "vibracion", label: "Vibración", desc: "Nivel de vibración de seguridad." },
+      { key: "humedad", label: "Humedad", desc: "Humedad ambiental en la zona." },
+      { key: "temperatura", label: "Temperatura", desc: "Temperatura del entorno." }
+    ];
 
-      const datos = {};
-      for (const [sensor, [min, max]] of Object.entries(sensores)) {
-        datos[sensor] = (Math.random() * (max - min) + min).toFixed(2);
-      }
-      datos.timestamp = firebase.firestore.FieldValue.serverTimestamp();
+    const charts = {};
 
-      db.collection("sensores").add(datos)
-        .then(() => console.log("Datos subidos correctamente"))
-        .catch(e => console.error("Error subiendo datos: ", e));
+    function crearContenedores() {
+      const container = document.getElementById("charts");
+      sensores.forEach(({ key, label, desc }) => {
+        const div = document.createElement("div");
+        div.className = "chart-container";
+
+        const h3 = document.createElement("h3");
+        h3.className = "chart-title";
+        h3.textContent = label;
+        div.appendChild(h3);
+
+        const p = document.createElement("p");
+        p.className = "chart-desc";
+        p.textContent = desc;
+        div.appendChild(p);
+
+        const canvas = document.createElement("canvas");
+        canvas.id = key;
+        div.appendChild(canvas);
+
+        container.appendChild(div);
+      });
     }
 
-    // Subir datos cada minuto
-    setInterval(subirDatosAleatorios, 60000);
+    async function obtenerDatosSensores() {
+      const snapshot = await db.collection("sensores")
+        .orderBy("timestamp", "desc")
+        .limit(20)
+        .get();
 
-    // Subir al cargar la página también
-    subirDatosAleatorios();
+      const docs = [];
+      snapshot.forEach(doc => docs.push(doc.data()));
+      return docs.reverse();
+    }
+
+    function prepararDatos(docs) {
+      const datos = {};
+      sensores.forEach(({ key }) => {
+        datos[key] = { labels: [], valores: [] };
+      });
+
+      docs.forEach(doc => {
+        const ts = doc.timestamp?.toDate?.() || new Date();
+        const label = ts.toLocaleTimeString();
+
+        sensores.forEach(({ key }) => {
+          datos[key].labels.push(label);
+          datos[key].valores.push(doc[key] ?? null);
+        });
+      });
+
+      return datos;
+    }
+
+    async function graficarDatos() {
+      const docs = await obtenerDatosSensores();
+      const datos = prepararDatos(docs);
+
+      sensores.forEach(({ key, label }) => {
+        const ctx = document.getElementById(key).getContext("2d");
+        const data = {
+          labels: datos[key].labels,
+          datasets: [{
+            label: label,
+            data: datos[key].valores,
+            borderColor: "#3949ab",
+            backgroundColor: "rgba(57, 73, 171, 0.2)",
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3
+          }]
+        };
+
+        if (!charts[key]) {
+          charts[key] = new Chart(ctx, {
+            type: "line",
+            data: data,
+            options: {
+              responsive: true,
+              scales: {
+                x: { title: { display: true, text: "Hora" } },
+                y: { title: { display: true, text: label } }
+              }
+            }
+          });
+        } else {
+          charts[key].data = data;
+          charts[key].update();
+        }
+      });
+    }
+
+    crearContenedores();
+    graficarDatos();
+    setInterval(graficarDatos, 60000); // actualiza cada minuto
   </script>
 </body>
 </html>
