@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard Sensores Múltiples</title>
+  <title>Dashboard Sensores Simulados</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
@@ -48,22 +48,20 @@
   </style>
 </head>
 <body>
-  <h1>Dashboard Sensores de la Turbina</h1>
+  <h1>Dashboard Sensores Simulados</h1>
   <button id="refreshBtn">Actualizar Datos</button>
 
-  <div id="charts">
-    <!-- Aquí se insertarán los gráficos dinámicamente -->
-  </div>
+  <div id="charts"></div>
 
   <script>
     const sensores = [
-      { key: "voltaje_dc", label: "Voltaje DC" },
-      { key: "corriente_bateria", label: "Corriente carga batería" },
-      { key: "corriente_inversor", label: "Corriente inversor" },
-      { key: "rpm_turbina", label: "RPM turbina" },
-      { key: "vibracion", label: "Vibración" },
-      { key: "humedad", label: "Humedad" },
-      { key: "temperatura", label: "Temperatura" }
+      { key: "voltaje_dc", label: "Voltaje DC", min: 10, max: 14 },
+      { key: "corriente_bateria", label: "Corriente carga batería", min: 0, max: 30 },
+      { key: "corriente_inversor", label: "Corriente inversor", min: 0, max: 50 },
+      { key: "rpm_turbina", label: "RPM turbina", min: 0, max: 3000 },
+      { key: "vibracion", label: "Vibración", min: 0, max: 10 },
+      { key: "humedad", label: "Humedad", min: 20, max: 80 },
+      { key: "temperatura", label: "Temperatura", min: 0, max: 40 }
     ];
 
     let charts = {};
@@ -83,25 +81,13 @@
       return container;
     }
 
-    async function fetchDatos() {
-      try {
-        const response = await fetch('/api/sensores');
-        if (!response.ok) throw new Error("Error al obtener datos");
-        const data = await response.json();
-        return data;
-      } catch (error) {
-        alert("No se pudo cargar los datos: " + error.message);
-        return {};
-      }
-    }
-
-    function prepararDatos(sensorData) {
-      const labels = [];
+    function generarDatosAleatorios(min, max, cantidad = 20) {
       const valores = [];
-      for (const [key, val] of Object.entries(sensorData)) {
-        const fecha = new Date(parseInt(key));
-        labels.push(fecha.toLocaleString());
-        valores.push(val);
+      const labels = [];
+      const ahora = Date.now();
+      for (let i = cantidad - 1; i >= 0; i--) {
+        labels.push(new Date(ahora - i * 60000).toLocaleTimeString()); // cada minuto atrás
+        valores.push((Math.random() * (max - min) + min).toFixed(2));
       }
       return { labels, valores };
     }
@@ -126,7 +112,7 @@
           responsive: true,
           scales: {
             x: {
-              title: { display: true, text: 'Fecha y Hora' },
+              title: { display: true, text: 'Hora' },
               ticks: { maxRotation: 45, minRotation: 30 }
             },
             y: {
@@ -138,22 +124,16 @@
       });
     }
 
-    async function crearODActualizarGraficos() {
-      const datos = await fetchDatos();
-      sensores.forEach(({ key, label }) => {
-        const sensorData = datos[key] || {};
-        const data = prepararDatos(sensorData);
+    function crearODActualizarGraficos() {
+      sensores.forEach(({ key, label, min, max }) => {
+        const data = generarDatosAleatorios(min, max);
 
         if (!charts[key]) {
-          // Crear contenedor y canvas
           const contenedor = crearContenedorGrafico(key + "_container", label);
           const chartsDiv = document.getElementById("charts");
           chartsDiv.appendChild(contenedor);
-
-          // Crear gráfico nuevo
           charts[key] = crearGrafico(key, label, data);
         } else {
-          // Actualizar gráfico existente
           charts[key].data.labels = data.labels;
           charts[key].data.datasets[0].data = data.valores;
           charts[key].update();
@@ -163,7 +143,7 @@
 
     document.getElementById('refreshBtn').addEventListener('click', crearODActualizarGraficos);
 
-    // Cargar gráficos al inicio
+    // Carga inicial
     crearODActualizarGraficos();
   </script>
 </body>
