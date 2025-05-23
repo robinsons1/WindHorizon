@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard Mejorado</title>
+  <title>Dashboard Sensores Múltiples</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 900px;
+      max-width: 1100px;
       margin: 30px auto;
       padding: 0 15px;
       background-color: #f7f9fc;
@@ -16,60 +16,72 @@
     }
     h1 {
       text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 20px;
       color: #2c3e50;
     }
-    #stats {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      margin-bottom: 15px;
-      font-weight: bold;
-      color: #34495e;
+    .chart-container {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgb(0 0 0 / 0.1);
+      padding: 20px;
+      margin-bottom: 30px;
     }
-    #stats div {
-      background: #e1e8f0;
-      padding: 10px 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 5px rgb(0 0 0 / 0.1);
+    canvas {
+      max-width: 100%;
+      height: 350px !important;
     }
     #refreshBtn {
       display: block;
-      margin: 0 auto 20px auto;
-      padding: 8px 20px;
-      font-size: 16px;
+      margin: 0 auto 30px auto;
+      padding: 10px 25px;
+      font-size: 18px;
       border: none;
       background-color: #3498db;
       color: white;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
     #refreshBtn:hover {
       background-color: #2980b9;
     }
-    canvas {
-      background-color: white;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgb(0 0 0 / 0.1);
-    }
   </style>
 </head>
 <body>
-  <h1>Dashboard Mejorado con FastAPI</h1>
-
-  <div id="stats">
-    <div>Máximo: <span id="maxVal">-</span></div>
-    <div>Mínimo: <span id="minVal">-</span></div>
-    <div>Promedio: <span id="avgVal">-</span></div>
-  </div>
-
+  <h1>Dashboard Sensores de la Turbina</h1>
   <button id="refreshBtn">Actualizar Datos</button>
 
-  <canvas id="sensorChart" width="800" height="400"></canvas>
+  <div id="charts">
+    <!-- Aquí se insertarán los gráficos dinámicamente -->
+  </div>
 
   <script>
-    let sensorChart;
+    const sensores = [
+      { key: "voltaje_dc", label: "Voltaje DC" },
+      { key: "corriente_bateria", label: "Corriente carga batería" },
+      { key: "corriente_inversor", label: "Corriente inversor" },
+      { key: "rpm_turbina", label: "RPM turbina" },
+      { key: "vibracion", label: "Vibración" },
+      { key: "humedad", label: "Humedad" },
+      { key: "temperatura", label: "Temperatura" }
+    ];
+
+    let charts = {};
+
+    function crearContenedorGrafico(id, titulo) {
+      const container = document.createElement("div");
+      container.className = "chart-container";
+
+      const h3 = document.createElement("h3");
+      h3.textContent = titulo;
+      container.appendChild(h3);
+
+      const canvas = document.createElement("canvas");
+      canvas.id = id;
+      container.appendChild(canvas);
+
+      return container;
+    }
 
     async function fetchDatos() {
       try {
@@ -83,11 +95,10 @@
       }
     }
 
-    function prepararDatos(data) {
+    function prepararDatos(sensorData) {
       const labels = [];
       const valores = [];
-      for (const [key, val] of Object.entries(data)) {
-        // Asumimos que key es timestamp en ms, si no, adapta aquí
+      for (const [key, val] of Object.entries(sensorData)) {
         const fecha = new Date(parseInt(key));
         labels.push(fecha.toLocaleString());
         valores.push(val);
@@ -95,69 +106,65 @@
       return { labels, valores };
     }
 
-    function calcularEstadisticas(valores) {
-      if (valores.length === 0) return { max: '-', min: '-', avg: '-' };
-      const max = Math.max(...valores);
-      const min = Math.min(...valores);
-      const avg = (valores.reduce((a,b) => a + b, 0) / valores.length).toFixed(2);
-      return { max, min, avg };
-    }
-
-    async function crearGrafico() {
-      const datos = await fetchDatos();
-      const { labels, valores } = prepararDatos(datos);
-
-      const stats = calcularEstadisticas(valores);
-      document.getElementById('maxVal').textContent = stats.max;
-      document.getElementById('minVal').textContent = stats.min;
-      document.getElementById('avgVal').textContent = stats.avg;
-
-      const ctx = document.getElementById('sensorChart').getContext('2d');
-
-      if (sensorChart) {
-        // Actualiza datos si gráfico ya existe
-        sensorChart.data.labels = labels;
-        sensorChart.data.datasets[0].data = valores;
-        sensorChart.update();
-      } else {
-        sensorChart = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: 'Valor Sensor',
-              data: valores,
-              borderColor: '#2980b9',
-              backgroundColor: 'rgba(41, 128, 185, 0.2)',
-              fill: true,
-              tension: 0.3,
-              pointRadius: 3,
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: { labels: { font: { size: 14 } } }
+    function crearGrafico(id, label, data) {
+      const ctx = document.getElementById(id).getContext('2d');
+      return new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.labels,
+          datasets: [{
+            label: label,
+            data: data.valores,
+            borderColor: '#2980b9',
+            backgroundColor: 'rgba(41, 128, 185, 0.2)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              title: { display: true, text: 'Fecha y Hora' },
+              ticks: { maxRotation: 45, minRotation: 30 }
             },
-            scales: {
-              x: {
-                title: { display: true, text: 'Fecha y Hora' },
-                ticks: { maxRotation: 45, minRotation: 30 }
-              },
-              y: {
-                title: { display: true, text: 'Valor' },
-                beginAtZero: true
-              }
+            y: {
+              title: { display: true, text: label },
+              beginAtZero: true
             }
           }
-        });
-      }
+        }
+      });
     }
 
-    document.getElementById('refreshBtn').addEventListener('click', crearGrafico);
+    async function crearODActualizarGraficos() {
+      const datos = await fetchDatos();
+      sensores.forEach(({ key, label }) => {
+        const sensorData = datos[key] || {};
+        const data = prepararDatos(sensorData);
 
-    // Carga inicial del gráfico
-    crearGrafico();
+        if (!charts[key]) {
+          // Crear contenedor y canvas
+          const contenedor = crearContenedorGrafico(key + "_container", label);
+          const chartsDiv = document.getElementById("charts");
+          chartsDiv.appendChild(contenedor);
+
+          // Crear gráfico nuevo
+          charts[key] = crearGrafico(key, label, data);
+        } else {
+          // Actualizar gráfico existente
+          charts[key].data.labels = data.labels;
+          charts[key].data.datasets[0].data = data.valores;
+          charts[key].update();
+        }
+      });
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', crearODActualizarGraficos);
+
+    // Cargar gráficos al inicio
+    crearODActualizarGraficos();
   </script>
 </body>
 </html>
