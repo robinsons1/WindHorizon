@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard Turbina Eólica - Monitoreo de Sensores</title>
+  <title>WindHorizon - Monitoreo Inteligente de Turbinas Eólicas</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
@@ -17,14 +17,14 @@
     h1 {
       text-align: center;
       font-weight: 700;
-      font-size: 2.8rem;
+      font-size: 3rem;
       margin-bottom: 5px;
       color: #1a237e;
       text-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     p.subtitle {
       text-align: center;
-      font-size: 1.1rem;
+      font-size: 1.2rem;
       color: #555;
       margin-top: 0;
       margin-bottom: 40px;
@@ -32,24 +32,6 @@
       max-width: 700px;
       margin-left: auto;
       margin-right: auto;
-    }
-    #refreshBtn {
-      display: block;
-      margin: 0 auto 40px auto;
-      padding: 12px 32px;
-      font-size: 18px;
-      font-weight: 600;
-      border: none;
-      background-color: #3949ab;
-      color: white;
-      border-radius: 12px;
-      cursor: pointer;
-      box-shadow: 0 4px 10px rgba(57,73,171,0.4);
-      transition: background-color 0.3s ease, box-shadow 0.3s ease;
-    }
-    #refreshBtn:hover {
-      background-color: #283593;
-      box-shadow: 0 6px 15px rgba(40,53,147,0.6);
     }
     .chart-container {
       background: white;
@@ -87,12 +69,10 @@
   </style>
 </head>
 <body>
-  <h1>Dashboard Turbina Eólica</h1>
+  <h1>WindHorizon</h1>
   <p class="subtitle">
-    Monitoreo en tiempo real de sensores críticos para el rendimiento y seguridad de la turbina eólica.  
-    Visualiza las tendencias de voltaje, corriente, rpm, vibración, humedad y temperatura para un análisis efectivo.
+    Monitoreo Inteligente de Turbinas Eólicas — Visualiza en tiempo real los parámetros críticos para la eficiencia y seguridad del sistema.
   </p>
-  <button id="refreshBtn">Actualizar Datos</button>
 
   <div id="charts"></div>
 
@@ -102,43 +82,43 @@
         key: "voltaje_dc",
         label: "Voltaje DC",
         min: 10, max: 14,
-        desc: "Voltaje de alimentación en corriente continua. Es fundamental para la estabilidad del sistema eléctrico."
+        desc: "Voltaje DC junto con la corriente permite calcular la potencia entregada a la batería; medido a la salida del MPPT antes de la entrada a la batería."
       },
       {
         key: "corriente_bateria",
-        label: "Corriente carga batería",
+        label: "Corriente de Carga de Batería",
         min: 0, max: 30,
-        desc: "Corriente que entra a la batería durante la carga, importante para monitorear el estado de carga y evitar sobrecargas."
+        desc: "Determina, junto al voltaje, la potencia y verifica las corrientes de carga para mantener la batería en buen estado."
       },
       {
         key: "corriente_inversor",
-        label: "Corriente inversor",
+        label: "Corriente del Inversor",
         min: 0, max: 50,
-        desc: "Corriente que circula por el inversor. Valores anómalos pueden indicar fallos o sobrecargas."
+        desc: "Permite identificar la potencia de salida con un voltaje AC constante de 120VAC."
       },
       {
         key: "rpm_turbina",
-        label: "RPM turbina",
+        label: "RPM de la Turbina",
         min: 0, max: 3000,
-        desc: "Velocidad de rotación de la turbina, clave para el control del sistema y rendimiento energético."
+        desc: "Indica la velocidad de rotación y ayuda a calcular límites seguros mediante el freno."
       },
       {
         key: "vibracion",
-        label: "Vibración",
+        label: "Vibración Estructural",
         min: 0, max: 10,
-        desc: "Nivel de vibración medido en la estructura, útil para detectar desgastes o fallas mecánicas."
+        desc: "Sensor de seguridad que detecta vibraciones elevadas para detener la turbina y evitar daños."
       },
       {
         key: "humedad",
-        label: "Humedad",
+        label: "Humedad Ambiental",
         min: 20, max: 80,
-        desc: "Porcentaje de humedad ambiental, que puede afectar componentes eléctricos y mecánicos."
+        desc: "Monitorea las condiciones de humedad en la zona para prever efectos en componentes eléctricos y mecánicos."
       },
       {
         key: "temperatura",
-        label: "Temperatura",
+        label: "Temperatura Ambiental",
         min: 0, max: 40,
-        desc: "Temperatura ambiente en el sitio, importante para análisis de condiciones de operación."
+        desc: "Mide las condiciones climáticas que pueden afectar la operación y eficiencia de la turbina."
       }
     ];
 
@@ -230,12 +210,12 @@
       });
     }
 
+    // Inicializa todo al cargar
     crearContenedoresIniciales();
     crearGraficosIniciales();
 
-    document.getElementById("refreshBtn").addEventListener("click", () => {
-      actualizarDatos();
-    });
+    // Actualiza datos automáticamente cada 10 segundos
+    setInterval(actualizarDatos, 10000);
   </script>
 </body>
 </html>
