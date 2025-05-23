@@ -217,5 +217,55 @@
     // Actualiza datos automáticamente cada 10 segundos
     setInterval(actualizarDatos, 10000);
   </script>
+
+  
+  <!-- Aquí abajo, justo antes de </body>, pega este código -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDrG3Gi4G8CwDJc1Edw5fYIAb5umMweHrI",
+      authDomain: "turbina-cb817.firebaseapp.com",
+      projectId: "turbina-cb817",
+      storageBucket: "turbina-cb817.appspot.com",
+      messagingSenderId: "959062254095",
+      appId: "1:959062254095:web:bfb4c4687bd3007c80397a",
+      measurementId: "G-HX4S1HDEHP"
+    };
+
+    // Inicializa Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    const db = firebase.firestore();
+
+    function subirDatosAleatorios() {
+      const sensores = {
+        voltaje_dc: [10, 14],
+        corriente_bateria: [0, 30],
+        corriente_inversor: [0, 50],
+        rpm_turbina: [0, 3000],
+        vibracion: [0, 10],
+        humedad: [20, 80],
+        temperatura: [0, 40]
+      };
+
+      const datos = {};
+      for (const [sensor, [min, max]] of Object.entries(sensores)) {
+        datos[sensor] = (Math.random() * (max - min) + min).toFixed(2);
+      }
+      datos.timestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+      db.collection("sensores").add(datos)
+        .then(() => console.log("Datos subidos correctamente"))
+        .catch(e => console.error("Error subiendo datos: ", e));
+    }
+
+    // Subir datos cada minuto
+    setInterval(subirDatosAleatorios, 60000);
+
+    // Subir al cargar la página también
+    subirDatosAleatorios();
+  </script>
 </body>
 </html>
