@@ -3,79 +3,162 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard Sensores Simulados</title>
+  <title>Dashboard Turbina Eólica - Monitoreo de Sensores</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       max-width: 1100px;
-      margin: 30px auto;
-      padding: 0 15px;
-      background-color: #f7f9fc;
-      color: #333;
+      margin: 40px auto;
+      padding: 0 20px 40px 20px;
+      background-color: #f0f4f8;
+      color: #2c3e50;
     }
     h1 {
       text-align: center;
-      margin-bottom: 20px;
-      color: #2c3e50;
+      font-weight: 700;
+      font-size: 2.8rem;
+      margin-bottom: 5px;
+      color: #1a237e;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    p.subtitle {
+      text-align: center;
+      font-size: 1.1rem;
+      color: #555;
+      margin-top: 0;
+      margin-bottom: 40px;
+      font-style: italic;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #refreshBtn {
+      display: block;
+      margin: 0 auto 40px auto;
+      padding: 12px 32px;
+      font-size: 18px;
+      font-weight: 600;
+      border: none;
+      background-color: #3949ab;
+      color: white;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(57,73,171,0.4);
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    #refreshBtn:hover {
+      background-color: #283593;
+      box-shadow: 0 6px 15px rgba(40,53,147,0.6);
     }
     .chart-container {
       background: white;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgb(0 0 0 / 0.1);
-      padding: 20px;
-      margin-bottom: 30px;
+      border-radius: 15px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.07);
+      padding: 30px 30px 20px 30px;
+      margin-bottom: 50px;
+      transition: transform 0.3s ease;
+    }
+    .chart-container:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+    }
+    .chart-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #3949ab;
+      letter-spacing: 0.03em;
+    }
+    .chart-desc {
+      font-size: 1rem;
+      color: #666;
+      margin-top: 0;
+      margin-bottom: 20px;
+      line-height: 1.4;
+      font-style: italic;
+      max-width: 700px;
     }
     canvas {
       max-width: 100%;
       height: 350px !important;
-    }
-    #refreshBtn {
-      display: block;
-      margin: 0 auto 30px auto;
-      padding: 10px 25px;
-      font-size: 18px;
-      border: none;
-      background-color: #3498db;
-      color: white;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-    #refreshBtn:hover {
-      background-color: #2980b9;
+      border-radius: 12px;
     }
   </style>
 </head>
 <body>
-  <h1>Dashboard Sensores Simulados</h1>
+  <h1>Dashboard Turbina Eólica</h1>
+  <p class="subtitle">
+    Monitoreo en tiempo real de sensores críticos para el rendimiento y seguridad de la turbina eólica.  
+    Visualiza las tendencias de voltaje, corriente, rpm, vibración, humedad y temperatura para un análisis efectivo.
+  </p>
   <button id="refreshBtn">Actualizar Datos</button>
 
   <div id="charts"></div>
 
   <script>
     const sensores = [
-      { key: "voltaje_dc", label: "Voltaje DC", min: 10, max: 14 },
-      { key: "corriente_bateria", label: "Corriente carga batería", min: 0, max: 30 },
-      { key: "corriente_inversor", label: "Corriente inversor", min: 0, max: 50 },
-      { key: "rpm_turbina", label: "RPM turbina", min: 0, max: 3000 },
-      { key: "vibracion", label: "Vibración", min: 0, max: 10 },
-      { key: "humedad", label: "Humedad", min: 20, max: 80 },
-      { key: "temperatura", label: "Temperatura", min: 0, max: 40 }
+      {
+        key: "voltaje_dc",
+        label: "Voltaje DC",
+        min: 10, max: 14,
+        desc: "Voltaje de alimentación en corriente continua. Es fundamental para la estabilidad del sistema eléctrico."
+      },
+      {
+        key: "corriente_bateria",
+        label: "Corriente carga batería",
+        min: 0, max: 30,
+        desc: "Corriente que entra a la batería durante la carga, importante para monitorear el estado de carga y evitar sobrecargas."
+      },
+      {
+        key: "corriente_inversor",
+        label: "Corriente inversor",
+        min: 0, max: 50,
+        desc: "Corriente que circula por el inversor. Valores anómalos pueden indicar fallos o sobrecargas."
+      },
+      {
+        key: "rpm_turbina",
+        label: "RPM turbina",
+        min: 0, max: 3000,
+        desc: "Velocidad de rotación de la turbina, clave para el control del sistema y rendimiento energético."
+      },
+      {
+        key: "vibracion",
+        label: "Vibración",
+        min: 0, max: 10,
+        desc: "Nivel de vibración medido en la estructura, útil para detectar desgastes o fallas mecánicas."
+      },
+      {
+        key: "humedad",
+        label: "Humedad",
+        min: 20, max: 80,
+        desc: "Porcentaje de humedad ambiental, que puede afectar componentes eléctricos y mecánicos."
+      },
+      {
+        key: "temperatura",
+        label: "Temperatura",
+        min: 0, max: 40,
+        desc: "Temperatura ambiente en el sitio, importante para análisis de condiciones de operación."
+      }
     ];
 
     const charts = {};
 
-    // Crear todos los contenedores y canvases solo UNA VEZ al cargar
     function crearContenedoresIniciales() {
       const chartsDiv = document.getElementById("charts");
-      sensores.forEach(({ key, label }) => {
+      sensores.forEach(({ key, label, desc }) => {
         const contenedor = document.createElement("div");
         contenedor.className = "chart-container";
 
         const h3 = document.createElement("h3");
+        h3.className = "chart-title";
         h3.textContent = label;
         contenedor.appendChild(h3);
+
+        const p = document.createElement("p");
+        p.className = "chart-desc";
+        p.textContent = desc;
+        contenedor.appendChild(p);
 
         const canvas = document.createElement("canvas");
         canvas.id = key;
@@ -96,7 +179,6 @@
       return { labels, valores };
     }
 
-    // Crear todos los gráficos solo UNA VEZ, luego solo actualizarlos
     function crearGraficosIniciales() {
       sensores.forEach(({ key, label, min, max }) => {
         const data = generarDatosAleatorios(min, max);
@@ -109,15 +191,18 @@
             datasets: [{
               label: label,
               data: data.valores,
-              borderColor: "#2980b9",
-              backgroundColor: "rgba(41, 128, 185, 0.2)",
+              borderColor: "#3949ab",
+              backgroundColor: "rgba(57, 73, 171, 0.3)",
               fill: true,
               tension: 0.3,
-              pointRadius: 2
+              pointRadius: 3
             }]
           },
           options: {
             responsive: true,
+            plugins: {
+              legend: { labels: { font: { size: 14 } } }
+            },
             scales: {
               x: {
                 title: { display: true, text: "Hora" },
@@ -133,7 +218,6 @@
       });
     }
 
-    // Solo actualiza los datos de los gráficos existentes
     function actualizarDatos() {
       sensores.forEach(({ key, min, max }) => {
         const data = generarDatosAleatorios(min, max);
@@ -146,7 +230,6 @@
       });
     }
 
-    // Inicializar contenedores y gráficos al cargar la página
     crearContenedoresIniciales();
     crearGraficosIniciales();
 
