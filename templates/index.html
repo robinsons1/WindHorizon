@@ -64,21 +64,25 @@
       { key: "temperatura", label: "Temperatura", min: 0, max: 40 }
     ];
 
-    let charts = {};
+    const charts = {};
 
-    function crearContenedorGrafico(id, titulo) {
-      const container = document.createElement("div");
-      container.className = "chart-container";
+    // Crear todos los contenedores y canvases solo UNA VEZ al cargar
+    function crearContenedoresIniciales() {
+      const chartsDiv = document.getElementById("charts");
+      sensores.forEach(({ key, label }) => {
+        const contenedor = document.createElement("div");
+        contenedor.className = "chart-container";
 
-      const h3 = document.createElement("h3");
-      h3.textContent = titulo;
-      container.appendChild(h3);
+        const h3 = document.createElement("h3");
+        h3.textContent = label;
+        contenedor.appendChild(h3);
 
-      const canvas = document.createElement("canvas");
-      canvas.id = id;
-      container.appendChild(canvas);
+        const canvas = document.createElement("canvas");
+        canvas.id = key;
+        contenedor.appendChild(canvas);
 
-      return container;
+        chartsDiv.appendChild(contenedor);
+      });
     }
 
     function generarDatosAleatorios(min, max, cantidad = 20) {
@@ -86,74 +90,69 @@
       const labels = [];
       const ahora = Date.now();
       for (let i = cantidad - 1; i >= 0; i--) {
-        labels.push(new Date(ahora - i * 60000).toLocaleTimeString()); // cada minuto atrás
+        labels.push(new Date(ahora - i * 60000).toLocaleTimeString());
         valores.push((Math.random() * (max - min) + min).toFixed(2));
       }
       return { labels, valores };
     }
 
-    function crearGrafico(id, label, data) {
-      const ctx = document.getElementById(id).getContext('2d');
-      return new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: data.labels,
-          datasets: [{
-            label: label,
-            data: data.valores,
-            borderColor: '#2980b9',
-            backgroundColor: 'rgba(41, 128, 185, 0.2)',
-            fill: true,
-            tension: 0.3,
-            pointRadius: 2
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            x: {
-              title: { display: true, text: 'Hora' },
-              ticks: { maxRotation: 45, minRotation: 30 }
-            },
-            y: {
-              title: { display: true, text: label },
-              beginAtZero: true
-            }
-          }
-        }
-      });
-    }
-
-    function crearODActualizarGraficos() {
-      const chartsDiv = document.getElementById("charts");
-
+    // Crear todos los gráficos solo UNA VEZ, luego solo actualizarlos
+    function crearGraficosIniciales() {
       sensores.forEach(({ key, label, min, max }) => {
         const data = generarDatosAleatorios(min, max);
+        const ctx = document.getElementById(key).getContext("2d");
 
-        // Verificar si el canvas ya existe
-        let canvas = document.getElementById(key);
-        if (!canvas) {
-          // Crear contenedor y canvas sólo si NO existe
-          const contenedor = crearContenedorGrafico(key + "_container", label);
-          chartsDiv.appendChild(contenedor);
-          canvas = document.getElementById(key);
+        charts[key] = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: data.labels,
+            datasets: [{
+              label: label,
+              data: data.valores,
+              borderColor: "#2980b9",
+              backgroundColor: "rgba(41, 128, 185, 0.2)",
+              fill: true,
+              tension: 0.3,
+              pointRadius: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: {
+                title: { display: true, text: "Hora" },
+                ticks: { maxRotation: 45, minRotation: 30 }
+              },
+              y: {
+                title: { display: true, text: label },
+                beginAtZero: true
+              }
+            }
+          }
+        });
+      });
+    }
 
-          // Crear gráfico nuevo
-          charts[key] = crearGrafico(key, label, data);
-        } else {
-          // Actualizar gráfico existente
-          charts[key].data.labels = data.labels;
-          charts[key].data.datasets[0].data = data.valores;
-          charts[key].update();
+    // Solo actualiza los datos de los gráficos existentes
+    function actualizarDatos() {
+      sensores.forEach(({ key, min, max }) => {
+        const data = generarDatosAleatorios(min, max);
+        const chart = charts[key];
+        if (chart) {
+          chart.data.labels = data.labels;
+          chart.data.datasets[0].data = data.valores;
+          chart.update();
         }
       });
     }
 
+    // Inicializar contenedores y gráficos al cargar la página
+    crearContenedoresIniciales();
+    crearGraficosIniciales();
 
-    document.getElementById('refreshBtn').addEventListener('click', crearODActualizarGraficos);
-
-    // Carga inicial
-    crearODActualizarGraficos();
+    document.getElementById("refreshBtn").addEventListener("click", () => {
+      actualizarDatos();
+    });
   </script>
 </body>
 </html>
